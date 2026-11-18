@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block active_step %}2{% endblock %}
+
+{% block title %}Review | Device Compliance{% endblock %}
+
+{% block content %}
+<section class="page-head compact">
+    <div>
+        <h1>Review source mapping</h1>
+        <p class="lead">
+            Detection has already run. Change any source assignment
+            below before processing.
+        </p>
+    </div>
+
+    <div class="step-badge">{{ job.files|length }} files loaded</div>
+</section>
+
+<form id="process-form" method="POST" action="{{ url_for('main.process', job_id=job.id) }}">
+
+    <section class="panel">
+        <div class="panel-head">
+            <div>
+                <h2>File inventory</h2>
+                <p>Filename detection takes priority over column detection.</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">File</th>
+                        <th scope="col">Auto source</th>
+                        <th scope="col">Method</th>
+                        <th scope="col">Rows</th>
+                        <th scope="col">Columns</th>
+                        <th scope="col">Use as</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in job.files %}
+                    <tr>
+                        <td>
+                            <div class="file-name">
+                                <span class="file-dot" aria-hidden="true"></span>
+                                <span>{{ item.original_name }}</span>
+                            </div>
+                            {% if item.error %}
+                            <div class="row-error">{{ item.error }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="source-tag">{{ item.detected_source|upper }}</span>
+                        </td>
+                        <td>{{ item.detection_method }}</td>
+                        <td>{{ "{:,}".format(item.rows) }}</td>
+                        <td>{{ item.columns }}</td>
+                        <td>
+                            <label class="sr-only" for="source_{{ item.id }}">
+                                Source for {{ item.original_name }}
+                            </label>
+                            <select id="source_{{ item.id }}" name="source_{{ item.id }}" class="source-select">
+                                {% for source in source_types %}
+                                <option value="{{ source }}" {% if source==item.detected_source %} selected {% endif %}>
+                                    {{ source|upper }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-head">
+            <div>
+                <h2>Minimum application versions</h2>
+                <p>
+                    Select a minimum only where version compliance should
+                    be enforced for that application.
+                </p>
+            </div>
+        </div>
+
+        <div class="version-grid">
+            {% for source in ["av", "edr", "dlp", "bigfix", "zscaler", "intune", "cmdb"] %}
+            <div class="version-card">
+                <div class="version-title">
+                    <div>
+                        <strong>{{ source|upper }}</strong>
+                        <span>
+                            {{ job.version_catalog[source]|length }}
+                            version{{ "s" if job.version_catalog[source]|length != 1 else "" }} found
+                        </span>
+                    </div>
+                    {% if job.version_catalog[source] %}
+                    <span class="mini-dot" aria-hidden="true"></span>
+                    {% endif %}
+                </div>
+
+                <div class="version-chips">
+                    {% if job.version_catalog[source] %}
+                    {% for version in job.version_catalog[source] %}
+                    <span>{{ version }}</span>
+                    {% endfor %}
+                    {% else %}
+                    <span class="empty">No version detected</span>
+                    {% endif %}
+                </div>
+
+                <label for="minimum_version_{{ source }}">Minimum required version</label>
+                <select id="minimum_version_{{ source }}" name="minimum_version_{{ source }}">
+                    <option value="">No minimum</option>
+                    {% for version in job.version_catalog[source] %}
+                    <option value="{{ version }}">{{ version }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="action-bar">
+        <div>
+            <strong>Ready to process</strong>
+            <span>
+                The backend builds the global serial/hostname registry,
+                matches HR records, and generates the Excel workbook.
+            </span>
+        </div>
+        <button type="submit" class="btn primary" id="process-btn">
+            <span>Start processing</span>
+        </button>
+    </section>
+</form>
+
+<div id="processing-overlay" class="processing-overlay hidden" role="status" aria-live="polite">
+    <div class="processing-box">
+        <div class="spinner" aria-hidden="true"></div>
+        <h2>Processing your inventory</h2>
+        <p id="processing-message">Reading source files...</p>
+        <div class="progress-track">
+            <div class="progress-fill"></div>
+        </div>
+        <div class="processing-steps">
+            <span>Read files</span>
+            <span>Build registry</span>
+            <span>Map HR</span>
+            <span>Generate report</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById("process-form");
+    const overlay = document.getElementById("processing-overlay");
+    const processButton = document.getElementById("process-btn");
+    const processingMessage = document.getElementById("processing-message");
+    let processingTimer = null;
+
+    form.addEventListener("submit", function () {
+        overlay.classList.remove("hidden");
+        overlay.setAttribute("aria-busy", "true");
+        processButton.disabled = true;
+
+        const messages = [
+            "Reading source files...",
+            "Mapping serial numbers and hostnames...",
+            "Building global device registry...",
+            "Matching HR profiles...",
+            "Applying minimum versions...",
+            "Generating Excel workbook..."
+        ];
+
+        let index = 0;
+        if (processingTimer) {
+            clearInterval(processingTimer);
+        }
+
+        processingTimer = setInterval(function () {
+            index = Math.min(index + 1, messages.length - 1);
+            processingMessage.textContent = messages[index];
+        }, 900);
+    });
+</script>
+{% endblock %}

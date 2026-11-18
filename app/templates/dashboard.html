@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block active_step %}3{% endblock %}
+
+{% block title %}Dashboard | Device Compliance{% endblock %}
+
+{% block content %}
+<section class="page-head compact dashboard-head">
+    <div>
+        <h1>Compliance dashboard</h1>
+        <p class="lead">
+            Processing is complete. Review the result and download the
+            consolidated workbook.
+        </p>
+    </div>
+
+    <a class="btn primary" href="{{ url_for('main.download', job_id=job.id) }}">
+        Download Excel
+    </a>
+</section>
+
+<section class="metric-grid">
+    <div class="metric-card">
+        <span class="metric-label">Total devices</span>
+        <strong>{{ "{:,}".format(job.summary.total) }}</strong>
+        <small>Unique registry keys</small>
+    </div>
+
+    <div class="metric-card success">
+        <span class="metric-label">Compliant</span>
+        <strong>{{ "{:,}".format(job.summary.compliant) }}</strong>
+        <small>All required checks passed</small>
+    </div>
+
+    <div class="metric-card danger">
+        <span class="metric-label">Non-compliant</span>
+        <strong>{{ "{:,}".format(job.summary.non_compliant) }}</strong>
+        <small>Missing or version failures</small>
+    </div>
+
+    <div class="metric-card neutral">
+        <span class="metric-label">Sources</span>
+        <strong>{{ job.summary.active_sources }}</strong>
+        <small>Application sheets generated</small>
+    </div>
+</section>
+
+<section class="chart-grid">
+    <div class="panel chart-panel">
+        <div class="panel-head">
+            <div>
+                <h2>Compliance status</h2>
+                <p>Overall device result after source and version checks.</p>
+            </div>
+        </div>
+
+        <div class="bar-chart">
+            {% set total = job.summary.total or 1 %}
+            {% for label, value in job.chart_data.compliance.items() %}
+            {% set pct = ((value / total) * 100)|round(1) %}
+            <div class="bar-row">
+                <div class="bar-label">
+                    <span>{{ label }}</span>
+                    <strong>{{ value }}</strong>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-value {% if label == 'Compliant' %}good{% else %}bad{% endif %}"
+                        style="width: {{ pct }}%;">
+                    </div>
+                </div>
+                <span class="bar-percent">{{ pct }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="panel chart-panel">
+        <div class="panel-head">
+            <div>
+                <h2>Source coverage</h2>
+                <p>Devices reported by each application.</p>
+            </div>
+        </div>
+
+        <div class="bar-chart">
+            {% set total = job.summary.total or 1 %}
+            {% for label, value in job.chart_data.coverage.items() %}
+            {% set pct = ((value / total) * 100)|round(1) %}
+            <div class="bar-row">
+                <div class="bar-label">
+                    <span>{{ label }}</span>
+                    <strong>{{ value }}</strong>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-value" style="width: {{ pct }}%;"></div>
+                </div>
+                <span class="bar-percent">{{ pct }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="chart-grid">
+    <div class="panel chart-panel">
+        <div class="panel-head">
+            <div>
+                <h2>Version failures</h2>
+                <p>Devices below the selected minimum version.</p>
+            </div>
+        </div>
+
+        {% if job.chart_data.version_failures %}
+        <div class="bar-chart">
+            {% set max_failure = job.chart_data.version_failures.values()|max %}
+            {% set max_failure = max_failure or 1 %}
+            {% for label, value in job.chart_data.version_failures.items() %}
+            {% set pct = ((value / max_failure) * 100)|round(1) %}
+            <div class="bar-row">
+                <div class="bar-label">
+                    <span>{{ label }}</span>
+                    <strong>{{ value }}</strong>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-value warning" style="width: {{ pct }}%;"></div>
+                </div>
+                <span class="bar-percent">{{ value }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            No minimum application versions were selected.
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <h2>Minimum versions applied</h2>
+                <p>Rules used during this processing run.</p>
+            </div>
+        </div>
+
+        {% if job.minimum_versions %}
+        <div class="rule-list">
+            {% for app, version in job.minimum_versions.items() %}
+            <div class="rule-item">
+                <span class="source-tag">{{ app|upper }}</span>
+                <strong>{{ version }}</strong>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            No version rules were selected.
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <div>
+            <h2>Missing source coverage</h2>
+            <p>Devices without a record in each application source.</p>
+        </div>
+    </div>
+
+    <div class="coverage-grid">
+        {% for tool, count in job.summary.missing.items() %}
+        <div class="coverage-card">
+            <span>{{ tool|upper }}</span>
+            <strong>{{ "{:,}".format(count) }}</strong>
+            <small>not reported</small>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="download-banner">
+    <div>
+        <strong>Consolidated_Device_Report.xlsx</strong>
+        <div class="source-pills">
+            <span>BigFix</span><span>Intune</span><span>EDR</span>
+            <span>AV</span><span>DLP</span><span>CMDB</span><span>Zscaler</span>
+        </div>
+    </div>
+    <a class="btn secondary" href="{{ url_for('main.download', job_id=job.id) }}">
+        Download report
+    </a>
+</section>
+{% endblock %}

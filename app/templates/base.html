@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Device Compliance{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    {% set active_step = self.active_step()|int %}
+    {% block active_step %}1{% endblock %}
+
+    <header class="topbar">
+        <div class="shell nav">
+            <a class="brand" href="{{ url_for('main.index') }}" aria-label="Device Compliance home">
+                <span class="brand-mark">DC</span>
+                <span>Device Compliance</span>
+            </a>
+
+            <div class="nav-tools">
+                <span class="nav-pill">Batch processing</span>
+                <ol class="stepper" aria-label="Application workflow steps">
+                    <li class="step-item {% if active_step > 1 %}done{% elif active_step == 1 %}current{% endif %}">
+                        <span class="step-index">1</span><span class="step-label">Upload</span>
+                    </li>
+                    <li class="step-item {% if active_step > 2 %}done{% elif active_step == 2 %}current{% endif %}">
+                        <span class="step-index">2</span><span class="step-label">Review</span>
+                    </li>
+                    <li class="step-item {% if active_step == 3 %}current{% endif %}">
+                        <span class="step-index">3</span><span class="step-label">Dashboard</span>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </header>
+
+    <main class="shell">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+</body>
+
+</html>

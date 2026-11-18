@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block active_step %}1{% endblock %}
+
+{% block title %}Upload | Device Compliance{% endblock %}
+
+{% block content %}
+<section class="page-head hero-shell">
+    <div class="hero-copy">
+        <span class="eyebrow">INTELLIGENT COMPLIANCE</span>
+        <h1>Build your compliance report with confidence.</h1>
+        <p class="lead">
+            Upload source exports from Intune, EDR, AV, DLP, BigFix, CMDB, and Zscaler.
+            The pipeline auto-detects file intent, merges duplicates, validates minimum versions,
+            and prepares a consolidated workbook in one guided flow.
+        </p>
+    </div>
+    <div class="hero-badge" aria-label="Key report stats">
+        <div>
+            <span>7</span>
+            <small>Sources</small>
+        </div>
+        <div>
+            <span>1</span>
+            <small>Workbook</small>
+        </div>
+        <div>
+            <span>Fast</span>
+            <small>Review flow</small>
+        </div>
+    </div>
+</section>
+
+<section class="upload-layout">
+    <form action="{{ url_for('main.upload') }}" method="POST" enctype="multipart/form-data" id="upload-form"
+        class="upload-card">
+
+        <div class="dropzone" id="dropzone">
+            <input id="files" type="file" name="files" multiple accept=".csv,.xlsx" aria-describedby="dropzone-helper">
+
+            <div class="upload-icon" aria-hidden="true">＋</div>
+            <h2>Drop your files here</h2>
+            <p>or click to browse CSV / XLSX exports</p>
+            <span class="helper" id="dropzone-helper">
+                Multiple files and duplicate filenames are supported.
+            </span>
+        </div>
+
+        <div id="file-list" class="selected-files"></div>
+
+        <button class="btn primary full" type="submit" id="upload-btn">
+            <span>Read files &amp; continue</span>
+        </button>
+    </form>
+
+    <aside class="info-panel">
+        <div class="info-item">
+            <span class="info-number">1</span>
+            <div>
+                <h3>Auto-detect</h3>
+                <p>
+                    Filename keywords such as Intune, EDR, AV, DLP,
+                    BigFix, CMDB and Zscaler are checked first.
+                </p>
+            </div>
+        </div>
+
+        <div class="info-item">
+            <span class="info-number">2</span>
+            <div>
+                <h3>Read &amp; merge</h3>
+                <p>
+                    Every file is read. Multiple files assigned to the
+                    same application are combined before registry mapping.
+                </p>
+            </div>
+        </div>
+
+        <div class="info-item">
+            <span class="info-number">3</span>
+            <div>
+                <h3>Version rules</h3>
+                <p>
+                    Available versions are extracted from the uploaded
+                    data so minimum versions can be selected safely.
+                </p>
+            </div>
+        </div>
+    </aside>
+</section>
+
+<section class="feature-grid">
+    <div class="feature">
+        <span class="feature-badge">7</span>
+        <strong>Source types</strong>
+        <small>BigFix, Intune, EDR, AV, DLP, CMDB, Zscaler</small>
+    </div>
+    <div class="feature">
+        <span class="feature-badge">Any number</span>
+        <strong>Files per source</strong>
+        <small>Upload as many exports as your dataset requires.</small>
+    </div>
+    <div class="feature">
+        <span class="feature-badge">4.10 &gt; 4.9</span>
+        <strong>Numeric version compare</strong>
+        <small>Versions are compared numerically, not alphabetically.</small>
+    </div>
+</section>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}
